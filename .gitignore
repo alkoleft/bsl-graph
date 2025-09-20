@@ -43,3 +43,5 @@ bin/
 *.gz
 *.tmp
 /.kotlin
+data/
+*/node_modules/

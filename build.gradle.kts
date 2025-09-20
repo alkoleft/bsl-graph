@@ -58,9 +58,6 @@ dependencies {
     // Spring Boot with Kotlin
     implementation(libs.bundles.spring.boot)
 
-    // Spring AI MCP Server
-    implementation(libs.spring.ai.starter.mcp.server)
-
     // JSON/XML with Kotlin support
     implementation(libs.bundles.jackson)
 
@@ -69,6 +66,7 @@ dependencies {
 
     // Reactor Core для Spring AI MCP
     implementation(libs.reactor.core)
+    implementation(libs.kotlinx.coroutines.reactor)
 
     // 1C Syntax libraries
     implementation(libs.bundles.bsl.syntax) {

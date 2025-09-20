@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Graph Visualization</title>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #toolbar { height: 48px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #ddd; font-family: sans-serif; }
+    #container { position: absolute; top: 48px; bottom: 0; left: 0; right: 0; }
+    .badge { background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 2px 6px; }
+    input, select, button { height: 32px; }
+  </style>
+  <!-- Sigma.js и Graphology через CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/graphology/0.26.0/graphology.umd.min.js" integrity="sha512-Hqa5FKQ53pYDWaRnytoNvRT3JXRac7dcH+kB3RUCX69CGNrnz5LE76Mp0z186qDv0LBWrwx5QipEoenZB5CE4w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdn.jsdelivr.net/npm/graphology-layout-forceatlas2@0.10.1/worker.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/graphology-layout@0.6.1/circular.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sigma.js/3.0.2/sigma.min.js" integrity="sha512-c90IgWzW14albFH675ZqMPL7t0hQtA+lZ9Pc1VuF45QButMHnyOUY2i2OBURHdeE2al9k96X+02zV3cYF+ynOw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+  <div id="toolbar">
+    <strong>Graph</strong>
+    <span id="stats" class="badge">...</span>
+    <label>Type: <input id="typeInput" placeholder="e.g. CLASS" /></label>
+    <button id="loadBtn">Load</button>
+    <button id="resetBtn">Reset</button>
+  </div>
+  <div id="container"></div>
+
+  <script>
+    const api = {
+      stats: '/api/graph/stats',
+      nodes: (type) => type ? `/api/graph/nodes?type=${encodeURIComponent(type)}` : '/api/graph/nodes',
+      search: '/api/graph/search'
+    };
+
+    const statsEl = document.getElementById('stats');
+    const typeInput = document.getElementById('typeInput');
+    const loadBtn = document.getElementById('loadBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const container = document.getElementById('container');
+
+    const Graph = window.graphology;
+    const ForceAtlas2 = window.forceAtlas2;
+    const FA2Assign = window.forceAtlas2.assign;
+
+    let sigmaInstance = null;
+    let graph = null;
+
+    async function fetchJson(url, options) {
+      const res = await fetch(url, options);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    }
+
+    async function loadStats() {
+      try {
+        const s = await fetchJson(api.stats);
+        statsEl.textContent = `Nodes: ${s.totalNodes}  Edges: ${s.totalEdges}`;
+      } catch (e) {
+        statsEl.textContent = 'Stats unavailable';
+      }
+    }
+
+    function ensurePositions(g) {
+      // Инициализируем позиции если их нет
+      g.forEachNode((n, attr) => {
+        if (typeof attr.x !== 'number' || typeof attr.y !== 'number') {
+          g.setNodeAttribute(n, 'x', Math.random());
+          g.setNodeAttribute(n, 'y', Math.random());
+        }
+        if (typeof attr.size !== 'number') g.setNodeAttribute(n, 'size', 6);
+        if (typeof attr.color !== 'string') g.setNodeAttribute(n, 'color', '#4c78a8');
+        if (typeof attr.label !== 'string') g.setNodeAttribute(n, 'label', attr.properties?.name || n);
+      });
+      // Быстрый прогон ForceAtlas2 для читаемости
+      try {
+        const settings = ForceAtlas2.inferSettings(g);
+        FA2Assign(g, { iterations: 200, settings });
+      } catch (_) {}
+    }
+
+    function renderGraph(data) {
+      if (sigmaInstance) {
+        sigmaInstance.kill();
+        sigmaInstance = null;
+      }
+      graph = new Graph();
+
+      const nodeIds = new Set();
+      (data.nodes || []).forEach(n => {
+        const id = String(n.id);
+        if (!nodeIds.has(id)) {
+          nodeIds.add(id);
+          graph.addNode(id, {
+            type: n.type,
+            properties: n.properties || {},
+            labels: n.labels || [],
+            label: (n.properties && (n.properties.name || n.properties.Naimevovanie || n.properties.title)) || `${n.type}:${id}`
+          });
+        }
+      });
+
+      (data.edges || []).forEach(e => {
+        const s = String(e.sourceId);
+        const t = String(e.targetId);
+        if (nodeIds.has(s) && nodeIds.has(t)) {
+          const edgeId = `${s}->${t}:${e.type}`;
+          if (!graph.hasEdge(edgeId)) {
+            graph.addDirectedEdgeWithKey(edgeId, s, t, {
+              type: e.type,
+              properties: e.properties || {},
+              size: 1,
+              color: '#c44e52'
+            });
+          }
+        }
+      });
+
+      ensurePositions(graph);
+      sigmaInstance = new window.sigma.Sigma(graph, container);
+    }
+
+    async function loadInitial() {
+      await loadStats();
+      // Стартовая загрузка: используем POST /search без фильтров
+      try {
+        const data = await fetchJson(api.search, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ limit: 300 })
+        });
+        renderGraph(data);
+      } catch (e) {
+        // fallback: получить только узлы
+        try {
+          const nodes = await fetchJson(api.nodes(null));
+          renderGraph({ nodes, edges: [] });
+        } catch (_) {
+          renderGraph({ nodes: [], edges: [] });
+        }
+      }
+    }
+
+    loadBtn.addEventListener('click', async () => {
+      const t = (typeInput.value || '').trim();
+      if (!t) {
+        await loadInitial();
+        return;
+      }
+      try {
+        const nodes = await fetchJson(api.nodes(t));
+        // Для выбранного типа получаем связи на глубину 1 для первых 100
+        const relatedPromises = nodes.slice(0, 100).map(n => fetchJson(`/api/graph/related/${encodeURIComponent(n.id)}?depth=1`).catch(() => []));
+        const relatedArrays = await Promise.all(relatedPromises);
+        const related = new Map();
+        relatedArrays.flat().forEach(n => related.set(String(n.id), n));
+        const allNodes = [...nodes, ...Array.from(related.values())];
+        renderGraph({ nodes: allNodes, edges: [] });
+      } catch (e) {
+        console.error(e);
+      }
+      await loadStats();
+    });
+
+    resetBtn.addEventListener('click', async () => {
+      typeInput.value = '';
+      await loadInitial();
+    });
+
+    loadInitial();
+  </script>
+</body>
+</html>
+
+
+
+
+

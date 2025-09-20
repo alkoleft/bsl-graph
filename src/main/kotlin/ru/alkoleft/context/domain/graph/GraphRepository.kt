@@ -4,43 +4,45 @@ package ru.alkoleft.context.domain.graph
  * Репозиторий для работы с графом знаний
  */
 interface GraphKnowledgeRepository {
+
+    fun isConnected(): Boolean
     /**
      * Сохраняет узел в граф знаний
      */
-    suspend fun saveNode(node: GraphNode): Boolean
+    fun saveNode(node: GraphNode): Boolean
 
     /**
      * Сохраняет ребро в граф знаний
      */
-    suspend fun saveEdge(edge: GraphEdge): Boolean
+    fun saveEdge(edge: GraphEdge): Boolean
 
     /**
      * Находит узлы по запросу
      */
-    suspend fun findNodes(query: GraphQuery): GraphSearchResult
+    fun findNodes(query: GraphQuery): GraphSearchResult
 
     /**
      * Находит узлы по типу
      */
-    suspend fun findNodesByType(type: NodeType): List<GraphNode>
+    fun findNodesByType(type: NodeType): List<GraphNode>
 
     /**
      * Находит узлы по свойствам
      */
-    suspend fun findNodesByProperties(properties: Map<String, Any>): List<GraphNode>
+    fun findNodesByProperties(properties: Map<String, Any>): List<GraphNode>
 
     /**
      * Находит связанные узлы
      */
-    suspend fun findRelatedNodes(
+    fun findRelatedNodes(
         nodeId: String,
         maxDepth: Int = 1,
-    ): List<GraphNode>
+    ): GraphSearchResult
 
     /**
      * Находит рёбра между узлами
      */
-    suspend fun findEdges(
+    fun findEdges(
         sourceId: String,
         targetId: String,
     ): List<GraphEdge>
@@ -48,12 +50,12 @@ interface GraphKnowledgeRepository {
     /**
      * Удаляет узел из графа
      */
-    suspend fun deleteNode(nodeId: String): Boolean
+    fun deleteNode(nodeId: String): Boolean
 
     /**
      * Удаляет ребро из графа
      */
-    suspend fun deleteEdge(
+    fun deleteEdge(
         sourceId: String,
         targetId: String,
         edgeType: EdgeType,
@@ -62,7 +64,7 @@ interface GraphKnowledgeRepository {
     /**
      * Обновляет свойства узла
      */
-    suspend fun updateNodeProperties(
+    fun updateNodeProperties(
         nodeId: String,
         properties: Map<String, Any>,
     ): Boolean
@@ -70,12 +72,12 @@ interface GraphKnowledgeRepository {
     /**
      * Проверяет существование узла
      */
-    suspend fun nodeExists(nodeId: String): Boolean
+    fun nodeExists(nodeId: String): Boolean
 
     /**
      * Получает статистику графа
      */
-    suspend fun getGraphStatistics(): GraphStatistics
+    fun getGraphStatistics(): GraphStatistics
 }
 
 /**

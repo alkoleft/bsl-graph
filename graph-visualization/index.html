@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Graph Visualization</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div id="toolbar">
+      <strong>Graph</strong>
+      <span id="stats" class="badge">...</span>
+      <label>Type: <input id="typeInput" placeholder="e.g. CLASS" /></label>
+      <button id="loadBtn">Load</button>
+      <button id="resetBtn">Reset</button>
+      <button id="fitCameraBtn">Fit Camera</button>
+    </div>
+    <div id="main-content">
+      <div id="sidebar">
+        <div id="tree-header">
+          <h3>Узлы по типам</h3>
+        </div>
+        <div id="tree-container"></div>
+        <div id="edge-legend-header">
+          <h3>Типы связей</h3>
+        </div>
+        <div id="edge-legend-container"></div>
+      </div>
+      <div id="container"></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

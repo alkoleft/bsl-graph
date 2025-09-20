@@ -1,0 +1,22 @@
+{
+  "name": "graph-visualization",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --open"
+  },
+  "dependencies": {
+    "@sigma/node-image": "^3.0.0",
+    "graphology": "^0.26.0",
+    "graphology-layout-forceatlas2": "^0.10.1",
+    "sigma": "^3.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.8"
+  }
+}

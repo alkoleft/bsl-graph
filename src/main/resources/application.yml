@@ -1,67 +1,30 @@
 spring:
   application:
-    name: mcp-bsl-context
+    name: bsl-context
   cache:
     type: simple
-  ai:
-    mcp:
-      server:
-        # Информация о сервере
-        name: "1C Platform Context Server"
-        version: "1.0.0"
-        description: "MCP сервер для доступа к метаданным и кодовой базе проектов 1С:Предприятие"
-        instructions: "MCP сервер для анализа метаданных и кодовой базы проектов 1С:Предприятие. Предоставляет доступ к конфигурации, объектам, модулям и их взаимосвязям."
-        type: SYNC
-        # Транспорт - используем STDIO для интеграции с MCP клиентами
-        stdio: true
-
-        # Возможности сервера
-        capabilities:
-          tools:
-            # Поддержка инструментов
-            enabled: true
-          resources:
-            # Поддержка ресурсов (отключено для простоты)
-            enabled: false
-          prompts:
-            # Поддержка промптов (отключено для простоты)
-            enabled: false
-  # Отключаем баннер Spring Boot для чистого STDIO вывода
+  # Настройки приложения
   main:
     banner-mode: off
-    web-application-type: none
-  # Отключаем автоконфигурацию веб-слоя
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
-      - org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration
 
-# Настройки платформы 1С
-platform:
-  context:
-    # Путь к каталогу с файлами платформы (содержащий shcntx_ru.hbk)
-    # Можно переопределить через переменную окружения PLATFORM_CONTEXT_PATH
-    path: ${PLATFORM_CONTEXT_PATH:}
-
-# Настройки NebulaGraph
 nebula:
   addresses:
     - host: ${NEBULA_HOST:localhost}
       port: ${NEBULA_PORT:9669}
   username: ${NEBULA_USERNAME:root}
   password: ${NEBULA_PASSWORD:nebula}
-  space: ${NEBULA_SPACE:context}
+  space: ${NEBULA_SPACE:amusement_park}
   max-conn-size: ${NEBULA_MAX_CONN_SIZE:10}
   min-conn-size: ${NEBULA_MIN_CONN_SIZE:1}
   timeout: ${NEBULA_TIMEOUT:1000}
 
-# Отключаем веб-сервер (используем только STDIO)
+# Отключаем веб-сервер (используем только консольное приложение)
 server:
-  port: -1
+  port: 8888
 
 # Настройки логирования
 logging:
-  config: classpath:logback-mcp.xml
+  # config: classpath:logback-mcp.xml
   # Все остальные настройки логгирования теперь берутся из logback-mcp.xml
   level:
     root: INFO
