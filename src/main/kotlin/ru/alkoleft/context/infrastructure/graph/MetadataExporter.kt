@@ -5,7 +5,7 @@
  * Licensed under the MIT License. See LICENSE file in the project root for full license information.
  */
 
-package ru.alkoleft.context.infrastructure.metadata
+package ru.alkoleft.context.infrastructure.graph
 
 import com.github._1c_syntax.bsl.mdclasses.Configuration
 import com.github._1c_syntax.bsl.mdo.Attribute
@@ -18,8 +18,6 @@ import com.github._1c_syntax.bsl.mdo.StyleItem
 import com.github._1c_syntax.bsl.mdo.Subsystem
 import com.github._1c_syntax.bsl.mdo.TabularSectionOwner
 import com.github._1c_syntax.bsl.mdo.support.MetadataValueType
-import com.github._1c_syntax.bsl.reader.MDOReader
-import com.github._1c_syntax.bsl.types.ConfigurationSource
 import com.github._1c_syntax.bsl.types.MDOType
 import com.github._1c_syntax.bsl.types.MdoReference
 import com.github._1c_syntax.bsl.types.ValueTypeDescription
@@ -30,32 +28,19 @@ import ru.alkoleft.context.domain.graph.GraphKnowledgeRepository
 import ru.alkoleft.context.domain.graph.GraphNode
 import ru.alkoleft.context.domain.graph.MDObjectNode
 import ru.alkoleft.context.domain.metadata.MetadataLoadResult
-import java.nio.file.Path
+import ru.alkoleft.context.infrastructure.metadata.ConfigurationNode
+import ru.alkoleft.context.infrastructure.metadata.nodeId
+import ru.alkoleft.context.infrastructure.metadata.toNodeType
 import kotlin.jvm.optionals.getOrNull
 
 private val logger = KotlinLogging.logger { }
 
 @Component
-class MetadataLoader(
+class MetadataExporter(
     private val graphKnowledgeRepository: GraphKnowledgeRepository,
 ) {
-    fun load(configurationPath: Path): MetadataLoadResult {
+    fun exportMetadata(configuration: Configuration): MetadataLoadResult {
         try {
-            logger.info { "${"Начинаем загрузку метаданных в граф из пути: {}"} $configurationPath" }
-
-            // Читаем метаданные
-            val configuration = MDOReader.readConfiguration(configurationPath) as Configuration
-
-            if (configuration.configurationSource == ConfigurationSource.EMPTY) {
-                return MetadataLoadResult(
-                    success = false,
-                    configurationId = null,
-                    nodesCount = 0,
-                    edgesCount = 0,
-                    errors = listOf("Не удалось прочитать конфигурацию по пути $configurationPath"),
-                )
-            }
-
             // Сохраняем узлы в граф
             var savedNodesCount = 0
             var savedEdgesCount = 0
@@ -82,7 +67,7 @@ class MetadataLoader(
                 edgesCount = savedEdgesCount
             )
         } catch (e: Exception) {
-            logger.error(e) { "Ошибка при загрузке метаданных в граф из пути: $configurationPath" }
+            logger.error(e) { "Ошибка при загрузке метаданных в граф" }
             return MetadataLoadResult(
                 success = false,
                 configurationId = null,
